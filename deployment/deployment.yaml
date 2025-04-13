@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-static
+  name: web-static-git
 spec:
   replicas: 1
   selector:
@@ -12,9 +12,23 @@ spec:
       labels:
         app: web-static
     spec:
+      initContainers:
+        - name: git-clone
+          image: alpine/git
+          command:
+            - sh
+            - -c
+            - |
+              rm -rf /git-data/* /git-data/.[!.]* /git-data/..?* 2>/dev/null || true
+              git clone https://github.com/Resnick7/static-website.git /git-data
+          volumeMounts:
+            - name: web-content
+              mountPath: /git-data
       containers:
         - name: nginx
-          image: nginx:latest
+          image: nginx
+          ports:
+            - containerPort: 80
           volumeMounts:
             - name: web-content
               mountPath: /usr/share/nginx/html
@@ -22,3 +36,4 @@ spec:
         - name: web-content
           persistentVolumeClaim:
             claimName: pvc-web-content
+
