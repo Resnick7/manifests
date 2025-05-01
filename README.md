@@ -22,22 +22,26 @@ Antes de comenzar, asegúrese de tener instalado:
 
 3. Iniciar Minikube con un perfil personalizado, utilizando docker como back end y montando una carpeta local en el path que será utilizada por el volumen dentro del clúster:
 ```shell
-minikube start -p 0311ta --driver=docker \
+minikube start -p 0311at --driver=docker \
   --mount \
   --mount-string="$(pwd):/static-website"
 ```
 4. Aplicar los manifiestos de Kubernetes:
 ```shell
-kubectl apply -f pv.yaml
-kubectl apply -f pvc.yaml
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
+kubectl apply -f ./manifests/volume/pv.yaml
+kubectl apply -f ./manifests/volume/pvc.yaml
+kubectl apply -f ./manifests/deployment/deployment.yaml
+kubectl apply -f ./manifests/service/service.yaml
 ```
 5. Verificar que los pods estén corriendo:
 ```shell
 kubectl get pods
 ```
-6. Espera a que la columna de `STATUS` diga `1/1`.
+6. Debe obtener una salida similar a:
+```shell
+NAME                              READY   STATUS    RESTARTS   AGE
+web-static-git-6ff65ff746-h7l4k   1/1     Running   0          32s
+```
 7. Ahora podemos acceder a la página web:
 ```shell
 minikube service web-static-service -p 0311at
