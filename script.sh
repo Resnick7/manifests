@@ -12,6 +12,7 @@ LOCAL_WEB_DIR="static-website"
 LOCAL_MANIFEST_DIR="manifests"
 MOUNT_PATH="/static-website"
 BASE_DIR="$(pwd)"
+AUTO_CONFIRM=false
 
 # Log temporal
 LOG_FILE=$(mktemp /tmp/deploy_log.XXXXXX)
@@ -55,6 +56,13 @@ install_tool() {
   esac
 }
 
+# --- PARÁMETROS Y OPCIONES ---
+for arg in "$@"; do
+  if [[ "$arg" == "-y" || "$arg" == "--yes" ]]; then
+    AUTO_CONFIRM=true
+  fi
+done
+
 # --- VERIFICACIÓN DE DEPENDENCIAS ---
 REQUIRED_TOOLS=("docker" "minikube" "kubectl" "git")
 
@@ -67,19 +75,19 @@ done
 if minikube profile list | grep -q "$PROFILE"; then
   echo "⚠️ Ya existe un perfil llamado '$PROFILE'."
   echo "Si fue iniciado previamente con otro montaje, podría fallar al reiniciarlo."
-  read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
-  if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
-    echo "🧹 Eliminando perfil existente '$PROFILE'..."
-    minikube delete -p "$PROFILE" | tee -a "$LOG_FILE"
 
-    echo "🧼 Verificando si existen contenedores docker huérfanos relacionados..."
-    for container in $(docker ps -a --format '{{.Names}}' | grep -i "$PROFILE" || true); do
-      echo "  🔸 Eliminando contenedor huérfano: $container"
-      docker rm -f "$container" >> "$LOG_FILE" 2>&1 || true
-    done
+  if $AUTO_CONFIRM; then
+    echo "🧹 Eliminando perfil automáticamente por opción -y..."
+    minikube delete -p "$PROFILE"
   else
-    echo "❌ Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
-    exit 1
+    read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
+    if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
+      echo "Eliminando perfil existente '$PROFILE'..."
+      minikube delete -p "$PROFILE"
+    else
+      echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
+      exit 1
+    fi
   fi
 fi
 
