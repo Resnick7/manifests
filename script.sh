@@ -69,10 +69,16 @@ if minikube profile list | grep -q "$PROFILE"; then
   echo "Si fue iniciado previamente con otro montaje, podría fallar al reiniciarlo."
   read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
   if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
-    echo "Eliminando perfil existente '$PROFILE'..."
-    minikube delete -p "$PROFILE"
+    echo "🧹 Eliminando perfil existente '$PROFILE'..."
+    minikube delete -p "$PROFILE" | tee -a "$LOG_FILE"
+
+    echo "🧼 Verificando si existen contenedores docker huérfanos relacionados..."
+    for container in $(docker ps -a --format '{{.Names}}' | grep -i "$PROFILE" || true); do
+      echo "  🔸 Eliminando contenedor huérfano: $container"
+      docker rm -f "$container" >> "$LOG_FILE" 2>&1 || true
+    done
   else
-    echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
+    echo "❌ Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
     exit 1
   fi
 fi
@@ -120,9 +126,6 @@ done
 # --- VERIFICAR ESTADO Y EXPONER SERVICIO ---
 echo "Verificando estado final de los pods..." | tee -a "$LOG_FILE"
 kubectl get pods | tee -a "$LOG_FILE"
-
-echo "Accediendo al servicio web localmente..." | tee -a "$LOG_FILE"
-minikube service web-static-service -p "$PROFILE"
 
 echo "Accediendo al servicio web localmente..." | tee -a "$LOG_FILE"
 minikube service web-static-service -p "$PROFILE"
