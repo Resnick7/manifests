@@ -18,6 +18,24 @@ AUTO_CONFIRM=false
 LOG_FILE=$(mktemp /tmp/deploy_log.XXXXXX)
 echo "Log de instalación: $LOG_FILE"
 
+# --- PARSEO DE ARGUMENTOS ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -y|--yes)
+      AUTO_CONFIRM=true
+      shift
+      ;;
+    -*)
+      echo "❌ Opción desconocida: $1"
+      exit 1
+      ;;
+    *)
+      PROFILE="$1"
+      shift
+      ;;
+  esac
+done
+
 # --- FUNCIONES AUXILIARES ---
 
 check_tool() {
@@ -80,13 +98,18 @@ if minikube profile list | grep -q "$PROFILE"; then
     echo "🧹 Eliminando perfil automáticamente por opción -y..."
     minikube delete -p "$PROFILE"
   else
-    read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
-    if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
-      echo "Eliminando perfil existente '$PROFILE'..."
-      minikube delete -p "$PROFILE"
+    if $AUTO_CONFIRM; then
+  	echo "🧹 Eliminando perfil existente '$PROFILE' (modo no interactivo)..."
+  	minikube delete -p "$PROFILE"
     else
-      echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
-      exit 1
+  	read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
+  	if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
+    	  echo "Eliminando perfil existente '$PROFILE'..."
+    	  minikube delete -p "$PROFILE"
+  	else
+    	  echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
+    	exit 1
+      fi
     fi
   fi
 fi
