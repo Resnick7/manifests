@@ -1,8 +1,23 @@
 # 0311TA - K8S: Casi como en producción
 
-Este proyecto despliega una página web estática personalizada en un clúster local de Kubernetes usando Minikube.
+Este proyecto despliega una página web estática personalizada en un clúster local de Kubernetes usando Minikube
 
----
+## Despliegue automático con script
+
+Se incluye un script que automatiza todo el proceso: desde iniciar Minikube hasta verificar que la página web funcione correctamente. Solo debe ejecutar:
+
+`wget -q -O - https://kutt.it/auto-deployment | bash -s -- -y`
+
+Parámetros opcionales:
+- Con `-y` se activa el modo automático y elimina el perfil `0311at` si existe.
+- Si se le pasa otro parámetro lo toma como nuevo nombre del perfil, hay que tener cuidado que no exista un perfil con este nombre ya que provocará el fallo del script.
+
+Si se descarga el archivo `script.sh` y lo ejecuta manualmente en la línea de comandos con:
+
+`bash script.sh`
+
+Podrá interactuar con el script y decidir si eliminar o no el perfil ingresado.
+
 ## Requisitos
 
 Antes de comenzar, asegúrese de tener instalado:
@@ -12,7 +27,7 @@ Antes de comenzar, asegúrese de tener instalado:
 - [Git](https://git-scm.com/downloads)
 - Acceso a internet para clonar este repositorio.
 ---
-## Paso a paso de como desplegar la aplicación
+## Paso a paso de como desplegar manualmente la aplicación
 
 1. Clonar la página web estática:
 `git clone https://github.com/Resnick7/static-website.git`
