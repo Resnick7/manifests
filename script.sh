@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # --- CONFIGURACIÓN DEL ENTORNO ---
-PROFILE="${1:-0311at}"
+PROFILE=""
 REPO_WEB="https://github.com/Resnick7/static-website.git"
 REPO_MANIFESTS="https://github.com/Resnick7/manifests.git"
 
@@ -23,18 +23,33 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -y|--yes)
       AUTO_CONFIRM=true
-      shift
       ;;
     -*)
       echo "❌ Opción desconocida: $1"
       exit 1
       ;;
     *)
-      PROFILE="$1"
-      shift
+      if [[ -z "$PROFILE" ]]; then
+        PROFILE="$1"
+      else
+        echo "❌ Perfil ya especificado como '$PROFILE'. No se puede usar '$1'."
+        exit 1
+      fi
       ;;
   esac
+  shift
 done
+
+# Nombre de perfil por defecto
+if [[ -z "$PROFILE" ]]; then
+  PROFILE="0311at"
+fi
+
+# Validar nombre de perfil
+if ! [[ "$PROFILE" =~ ^[a-zA-Z0-9][-a-zA-Z0-9]{1,}$ ]]; then
+  echo "❌ Nombre de perfil inválido: '$PROFILE'. Usá solo letras, números o guiones (mínimo 2 caracteres, comenzando con alfanumérico)."
+  exit 1
+fi
 
 # --- FUNCIONES AUXILIARES ---
 
@@ -74,13 +89,6 @@ install_tool() {
   esac
 }
 
-# --- PARÁMETROS Y OPCIONES ---
-for arg in "$@"; do
-  if [[ "$arg" == "-y" || "$arg" == "--yes" ]]; then
-    AUTO_CONFIRM=true
-  fi
-done
-
 # --- VERIFICACIÓN DE DEPENDENCIAS ---
 REQUIRED_TOOLS=("docker" "minikube" "kubectl" "git")
 
@@ -98,18 +106,13 @@ if minikube profile list | grep -q "$PROFILE"; then
     echo "🧹 Eliminando perfil automáticamente por opción -y..."
     minikube delete -p "$PROFILE"
   else
-    if $AUTO_CONFIRM; then
-  	echo "🧹 Eliminando perfil existente '$PROFILE' (modo no interactivo)..."
-  	minikube delete -p "$PROFILE"
+    read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
+    if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
+      echo "Eliminando perfil existente '$PROFILE'..."
+      minikube delete -p "$PROFILE"
     else
-  	read -rp "¿Querés eliminar el perfil y recrearlo? (s/n): " respuesta
-  	if [[ "$respuesta" == "s" || "$respuesta" == "S" ]]; then
-    	  echo "Eliminando perfil existente '$PROFILE'..."
-    	  minikube delete -p "$PROFILE"
-  	else
-    	  echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
-    	exit 1
-      fi
+      echo "Abortado por el usuario. Elegí otro nombre de perfil si querés mantener el anterior."
+      exit 1
     fi
   fi
 fi
