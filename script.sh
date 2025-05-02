@@ -19,25 +19,19 @@ LOG_FILE=$(mktemp /tmp/deploy_log.XXXXXX)
 echo "Log de instalación: $LOG_FILE"
 
 # --- PARSEO DE ARGUMENTOS ---
-while [[ $# -gt 0 ]]; do
-  case "$1" in
+for arg in "$@"; do
+  case "$arg" in
     -y|--yes)
       AUTO_CONFIRM=true
       ;;
     -*)
-      echo "❌ Opción desconocida: $1"
+      echo "❌ Opción desconocida: $arg"
       exit 1
       ;;
     *)
-      if [[ -z "$PROFILE" ]]; then
-        PROFILE="$1"
-      else
-        echo "❌ Perfil ya especificado como '$PROFILE'. No se puede usar '$1'."
-        exit 1
-      fi
+      PROFILE="$arg"
       ;;
   esac
-  shift
 done
 
 # Nombre de perfil por defecto
